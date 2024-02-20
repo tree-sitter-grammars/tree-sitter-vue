@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+set -eu
+
+cd "$(dirname "$0")/.."
+
+function clone_repo {
+	owner=$1
+	name=$2
+	sha=$3
+
+	path=examples/$name
+	if [ ! -d "$path" ]; then
+		echo "Cloning $owner/$name"
+		git clone "https://github.com/$owner/$name" "$path"
+	fi
+
+	pushd "$path" >/dev/null
+	actual_sha=$(git rev-parse HEAD)
+	if [ "$actual_sha" != "$sha" ]; then
+		echo "Updating $owner/$name to $sha"
+		git fetch
+		git reset --hard "$sha"
+	fi
+	popd >/dev/null
+}
+
+clone_repo vuejs core ca9920c7d708c9da48ef0bd116610f1ecb6b56a9
+clone_repo vuetifyjs vuetify 136dd51e5cceed9699cbd3b752bb4b5fc03164b6
+clone_repo element-plus element-plus 48a056b051c8d571657900aae02ec8cbeff83077
+
+known_failures=$(cat script/known_failures.txt)
+
+# shellcheck disable=2046
+tree-sitter parse -q -s \
+	'examples/**/*.vue' \
+	$(for file in $known_failures; do echo "!${file}"; done)
+
+example_count=$(find examples -name '*.vue' | wc -l)
+failure_count=$(wc -w <<<"$known_failures")
+success_count=$((example_count - failure_count))
+success_percent=$(bc -l <<<"100*${success_count}/${example_count}")
+
+printf \
+	"Successfully parsed %d of %d example files (%.1f%%)\n" \
+	"$success_count" "$example_count" "$success_percent"
