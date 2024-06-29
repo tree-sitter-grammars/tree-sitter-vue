@@ -105,6 +105,7 @@ module.exports = grammar({
     end_tag: $ => seq(
       "</",
       alias($._end_tag_name, $.tag_name),
+      optional(choice($.attribute, $.directive_attribute)),
       ">",
     ),
 
