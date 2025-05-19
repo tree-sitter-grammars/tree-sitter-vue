@@ -493,7 +493,9 @@ void tree_sitter_vue_external_scanner_deserialize(void *payload,
 void tree_sitter_vue_external_scanner_destroy(void *payload) {
     Scanner *scanner = (Scanner *)payload;
     for (unsigned i = 0; i < scanner->tags.len; i++) {
-        STRING_FREE(scanner->tags.data[i].custom_tag_name);
+        if (scanner->tags.data[i].type == CUSTOM) {
+            STRING_FREE(scanner->tags.data[i].custom_tag_name);
+        }
     }
     VEC_FREE(scanner->tags);
     free(scanner);
