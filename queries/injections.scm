@@ -75,3 +75,20 @@
         (attribute_value) @injection.language)))
   (text) @injection.content
   (#eq? @injection.language "pug"))
+
+; ==== Fallbacks ====
+; NOTE: Fallbacks must come last to avoid conflicts
+
+; <script> with no lang attribute defaults to JavaScript
+((script_element
+  (start_tag
+    (tag_name))
+  (raw_text) @injection.content)
+  (#set! injection.language "javascript"))
+
+; <style> with no lang attribute defaults to CSS
+((style_element
+  (start_tag
+    (tag_name))
+  (raw_text) @injection.content)
+  (#set! injection.language "css"))
