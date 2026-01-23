@@ -1,4 +1,5 @@
-; inherits html_tags
+; inherits: html_tags
+
 ; <script lang="css">
 ((style_element
   (start_tag
@@ -20,7 +21,7 @@
         (attribute_value) @_scss)))
   (raw_text) @injection.content
   (#eq? @_lang "lang")
-  (#any-of? @_scss "less" "postcss")
+  (#any-of? @_scss "less" "postcss" "sass")
   (#set! injection.language "scss"))
 
 ; <script lang="js">
