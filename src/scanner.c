@@ -294,7 +294,8 @@ static bool scan_self_closing_tag_delimiter(Scanner *scanner, TSLexer *lexer) {
     if (lexer->lookahead == '>') {
         advance(lexer);
         if (scanner->tags.size > 0) {
-            tag_free(&array_pop(&scanner->tags));
+            Tag last_tag = array_pop(&scanner->tags);
+            tag_free(&last_tag);
             lexer->result_symbol = SELF_CLOSING_TAG_DELIMITER;
         }
         return true;
