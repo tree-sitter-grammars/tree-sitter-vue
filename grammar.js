@@ -5,9 +5,9 @@
  * @see {@link https://tree-sitter.github.io/tree-sitter/creating-parsers}
  */
 
-const HTML = require('tree-sitter-html/grammar');
+import HTML from 'tree-sitter-html/grammar.js';
 
-module.exports = grammar(HTML, {
+export default grammar(HTML, {
   name: 'vue',
 
   externals: ($, original) => original.concat([

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "license": "MIT",
   "description": "vue grammar for tree-sitter",
+  "type": "module",
   "repository": "tree-sitter-grammars/tree-sitter-vue",
   "author": "Amaan Qureshi <amaanq12@gmail.com>",
   "keywords": [
@@ -20,17 +21,13 @@
   },
   "main": "bindings/node",
   "dependencies": {
+    "node-addon-api": "^8.5.0",
+    "node-gyp-build": "^4.8.4",
     "nan": "^2.18.0",
-    "tree-sitter-html": "^0.20.1"
+    "tree-sitter-html": "=0.23.2"
   },
   "devDependencies": {
-    "eslint": ">=5.16.0",
-    "eslint-config-google": "^0.14.0",
-    "tree-sitter-cli": "~0.21.0-pre-release-1"
-  },
-  "tree-sitter": [
-    {
-      "scope": "source.vue"
-    }
-  ]
+    "prebuildify": "^6.0.1",
+    "tree-sitter-cli": "^0.26.0"
+  }
 }

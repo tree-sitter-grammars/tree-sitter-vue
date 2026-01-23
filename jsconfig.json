@@ -1,9 +1,0 @@
-{
-  "files": ["grammar.js"],
-  "exclude": ["node_modules"],
-  "compilerOptions": {
-    "checkJs": true,
-    "module": "Node16",
-    "types": ["tree-sitter-cli/dsl"]
-  }
-}
