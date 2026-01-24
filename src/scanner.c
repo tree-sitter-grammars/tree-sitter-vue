@@ -350,6 +350,14 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
                     advanced_once = true;
                     break;
 
+                case '\r':
+                    advance(lexer);
+                    // Mirror `default` case behavior if this is _not_ a CRLF, otherwise fallthrough and handle newline
+                    if (lexer->lookahead != '\n') {
+                        advanced_once = true;
+                        advance(lexer);
+                        break;
+                    }
                 case '\n':
                     if (valid_symbols[TEXT_FRAGMENT]) {
                         lexer->mark_end(lexer);
