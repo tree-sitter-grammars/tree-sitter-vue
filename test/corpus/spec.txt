@@ -464,3 +464,28 @@ Shorthands - v-on Shorthand (https://vuejs.org/v2/guide/syntax.html#v-on-Shortha
         (tag_name)))
     (end_tag
       (tag_name))))
+
+===========================================
+Elements - Element names with a dot in them
+===========================================
+
+<template>
+
+<Hello.World> ... </Hello.World>
+
+</template>
+
+--------------------------------------------------------------------------------
+
+(document
+  (template_element
+    (start_tag
+      (tag_name))
+    (element
+      (start_tag
+        (tag_name))
+      (text)
+      (end_tag
+        (tag_name)))
+    (end_tag
+      (tag_name))))
