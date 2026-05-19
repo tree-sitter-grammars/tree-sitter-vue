@@ -1,0 +1,115 @@
+// Vue grammar for tree-sitter (native DSL).
+// Translated from grammar.js. Inherits tree-sitter-html.
+
+let html = inherit("../tree-sitter-html/grammar.tsg")
+
+macro immediate_literals(p: int_t, literals: list_t<str_t>) rule_t {
+    choice(for (l: str_t) in literals { token_immediate(prec(p, l)) })
+}
+
+macro token_literals(p: int_t, literals: list_t<str_t>) rule_t {
+    choice(for (l: str_t) in literals { token(prec(p, l)) })
+}
+
+grammar {
+    language: "vue",
+    inherits: html,
+
+    externals: append(grammar_config(html, externals), [
+        _template_start_tag_name,
+        _text_fragment,
+        _interpolation_text,
+    ]),
+}
+
+// Extend html's `_node` to include vue's template_element and interpolation.
+override rule _node {
+    choice(
+        // Inlined from tree-sitter-html `_node` rule:
+        doctype, entity, text, element, script_element, style_element, erroneous_end_tag,
+        // Vue additions:
+        template_element,
+        interpolation,
+    )
+}
+
+rule template_element {
+    seq(alias(template_start_tag, start_tag), repeat(_node), end_tag)
+}
+
+override rule start_tag {
+    seq("<", alias(html::_start_tag_name, tag_name), repeat(_attribute), ">")
+}
+
+override rule script_start_tag {
+    seq("<", alias(html::_script_start_tag_name, tag_name), repeat(_attribute), ">")
+}
+
+override rule style_start_tag {
+    seq("<", alias(html::_style_start_tag_name, tag_name), repeat(_attribute), ">")
+}
+
+rule template_start_tag {
+    seq("<", alias(_template_start_tag_name, tag_name), repeat(_attribute), ">")
+}
+
+override rule self_closing_tag {
+    seq(
+        "<",
+        alias(choice(html::_start_tag_name, _template_start_tag_name), tag_name),
+        repeat(_attribute),
+        "/>",
+    )
+}
+
+override rule text { _text_fragment }
+
+rule interpolation {
+    seq("{{", optional(alias(_interpolation_text, raw_text)), "}}")
+}
+
+rule _attribute { choice(attribute, directive_attribute) }
+
+rule directive_attribute {
+    prec_right(0, seq(
+        choice(
+            seq(
+                directive_name,
+                optional(seq(
+                    immediate_literals(1, [":"]),
+                    choice(directive_value, dynamic_directive_value),
+                )),
+            ),
+            repeat1(seq(
+                token_literals(1, [":", ".", "@", "#"]),
+                choice(directive_value, dynamic_directive_value),
+            )),
+        ),
+        optional(directive_modifiers),
+        optional(seq("=", choice(attribute_value, quoted_attribute_value))),
+    ))
+}
+
+rule directive_name {
+    token(prec(1, regexp(r#"v-[^<>'"=/\s:.]+"#)))
+}
+
+rule directive_value { regexp(r#"[^<>"'/=\s:.]+"#) }
+
+rule dynamic_directive_value {
+    seq(
+        token_immediate(prec(1, "[")),
+        optional(dynamic_directive_inner_value),
+        token_immediate("]"),
+    )
+}
+
+rule dynamic_directive_inner_value {
+    token_immediate(regexp(r#"[^<>"'/=\s\]]+"#))
+}
+
+rule directive_modifiers {
+    repeat1(seq(token_immediate(prec(1, ".")), directive_modifier))
+}
+
+rule directive_modifier { token_immediate(regexp(r#"[^<>"'/=\s.]+"#)) }
