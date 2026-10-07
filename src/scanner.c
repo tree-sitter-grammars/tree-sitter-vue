@@ -16,6 +16,7 @@ enum TokenType {
     TEMPLATE_START_TAG_NAME,
     TEXT_FRAGMENT,
     INTERPOLATION_TEXT,
+    RAW_TEMPLATE_START_TAG_NAME,
 };
 
 typedef struct {
@@ -162,7 +163,18 @@ static bool scan_raw_text(Scanner *scanner, TSLexer *lexer) {
 
     lexer->mark_end(lexer);
 
-    const char *end_delimiter = array_back(&scanner->tags)->type == SCRIPT ? "</SCRIPT" : "</STYLE";
+    const char *end_delimiter;
+    switch (array_back(&scanner->tags)->type) {
+        case SCRIPT:
+            end_delimiter = "</SCRIPT";
+            break;
+        case TEMPLATE:
+            end_delimiter = "</TEMPLATE";
+            break;
+        default:
+            end_delimiter = "</STYLE";
+            break;
+    }
 
     unsigned delimiter_index = 0;
     while (lexer->lookahead) {
@@ -241,7 +253,68 @@ static bool scan_implicit_end_tag(Scanner *scanner, TSLexer *lexer) {
     return false;
 }
 
-static bool scan_start_tag_name(Scanner *scanner, TSLexer *lexer) {
+// Looks ahead through the attributes of a start tag for a `lang` attribute
+// whose value is not `html`. Must be called after `mark_end`.
+static bool scan_has_non_html_lang(TSLexer *lexer) {
+    while (!lexer->eof(lexer)) {
+        while (iswspace(lexer->lookahead) || lexer->lookahead == '/') {
+            advance(lexer);
+        }
+        if (lexer->lookahead == '>' || lexer->eof(lexer)) {
+            return false;
+        }
+
+        char name[5];
+        unsigned name_length = 0;
+        while (!lexer->eof(lexer) && !iswspace(lexer->lookahead) && lexer->lookahead != '=' &&
+               lexer->lookahead != '>' && lexer->lookahead != '/') {
+            if (name_length < sizeof(name)) {
+                name[name_length] = (char)towlower(lexer->lookahead);
+            }
+            name_length++;
+            advance(lexer);
+        }
+        bool is_lang = name_length == 4 && strncmp(name, "lang", 4) == 0;
+
+        while (iswspace(lexer->lookahead)) {
+            advance(lexer);
+        }
+        if (lexer->lookahead != '=') {
+            continue;
+        }
+        advance(lexer);
+        while (iswspace(lexer->lookahead)) {
+            advance(lexer);
+        }
+
+        int32_t quote = 0;
+        if (lexer->lookahead == '"' || lexer->lookahead == '\'') {
+            quote = lexer->lookahead;
+            advance(lexer);
+        }
+
+        char value[5];
+        unsigned value_length = 0;
+        while (!lexer->eof(lexer) &&
+               (quote ? lexer->lookahead != quote : !iswspace(lexer->lookahead) && lexer->lookahead != '>')) {
+            if (value_length < sizeof(value)) {
+                value[value_length] = (char)towlower(lexer->lookahead);
+            }
+            value_length++;
+            advance(lexer);
+        }
+        if (quote && lexer->lookahead == quote) {
+            advance(lexer);
+        }
+
+        if (is_lang) {
+            return value_length > 0 && !(value_length == 4 && strncmp(value, "html", 4) == 0);
+        }
+    }
+    return false;
+}
+
+static bool scan_start_tag_name(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
     String tag_name = scan_tag_name(lexer);
 
     if (tag_name.size == 0) {
@@ -253,7 +326,10 @@ static bool scan_start_tag_name(Scanner *scanner, TSLexer *lexer) {
     array_push(&scanner->tags, tag);
     switch (tag.type) {
         case TEMPLATE:
-            lexer->result_symbol = TEMPLATE_START_TAG_NAME;
+            lexer->mark_end(lexer);
+            lexer->result_symbol = valid_symbols[RAW_TEMPLATE_START_TAG_NAME] && scan_has_non_html_lang(lexer)
+                                       ? RAW_TEMPLATE_START_TAG_NAME
+                                       : TEMPLATE_START_TAG_NAME;
             break;
         case SCRIPT:
             lexer->result_symbol = SCRIPT_START_TAG_NAME;
@@ -431,7 +507,7 @@ static bool scan(Scanner *scanner, TSLexer *lexer, const bool *valid_symbols) {
 
         default:
             if ((valid_symbols[START_TAG_NAME] || valid_symbols[END_TAG_NAME]) && !valid_symbols[RAW_TEXT]) {
-                return valid_symbols[START_TAG_NAME] ? scan_start_tag_name(scanner, lexer)
+                return valid_symbols[START_TAG_NAME] ? scan_start_tag_name(scanner, lexer, valid_symbols)
                                                      : scan_end_tag_name(scanner, lexer);
             }
     }
