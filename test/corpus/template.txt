@@ -1,0 +1,95 @@
+================================================================================
+Template with a non-HTML lang is raw text
+================================================================================
+
+<template lang="pug">
+div
+  p Hello <strong>{{ name }}</strong>
+  span(v-if="a <b") {{ `${c}` }}
+  <!-- comment -->
+  template(v-if="x") </templ
+</template>
+
+--------------------------------------------------------------------------------
+
+(document
+  (template_element
+    (start_tag
+      (tag_name)
+      (attribute
+        (attribute_name)
+        (quoted_attribute_value
+          (attribute_value))))
+    (raw_text)
+    (end_tag
+      (tag_name))))
+
+================================================================================
+Template lang attribute variants
+================================================================================
+
+<template functional data-x="a>b" LANG='Pug'>
+div <b>x</b>
+</TEMPLATE>
+<template lang=jade></template>
+
+--------------------------------------------------------------------------------
+
+(document
+  (template_element
+    (start_tag
+      (tag_name)
+      (attribute
+        (attribute_name))
+      (attribute
+        (attribute_name)
+        (quoted_attribute_value
+          (attribute_value)))
+      (attribute
+        (attribute_name)
+        (quoted_attribute_value
+          (attribute_value))))
+    (raw_text)
+    (end_tag
+      (tag_name)))
+  (template_element
+    (start_tag
+      (tag_name)
+      (attribute
+        (attribute_name)
+        (attribute_value)))
+    (raw_text)
+    (end_tag
+      (tag_name))))
+
+================================================================================
+Template with lang="html" is parsed as HTML
+================================================================================
+
+<template lang="html">
+  <div :lang="pug">{{ a }}</div>
+</template>
+
+--------------------------------------------------------------------------------
+
+(document
+  (template_element
+    (start_tag
+      (tag_name)
+      (attribute
+        (attribute_name)
+        (quoted_attribute_value
+          (attribute_value))))
+    (element
+      (start_tag
+        (tag_name)
+        (directive_attribute
+          (directive_value)
+          (quoted_attribute_value
+            (attribute_value))))
+      (interpolation
+        (raw_text))
+      (end_tag
+        (tag_name)))
+    (end_tag
+      (tag_name))))

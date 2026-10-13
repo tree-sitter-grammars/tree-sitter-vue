@@ -69,10 +69,12 @@
     (attribute_value) @injection.content
     (#set! injection.language "typescript")))
 
+; <template lang="pug">
 (template_element
   (start_tag
     (attribute
+      (attribute_name) @_lang
       (quoted_attribute_value
         (attribute_value) @injection.language)))
-  (text) @injection.content
-  (#eq? @injection.language "pug"))
+  (raw_text) @injection.content
+  (#eq? @_lang "lang"))

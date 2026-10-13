@@ -14,6 +14,7 @@ export default grammar(HTML, {
     $._template_start_tag_name,
     $._text_fragment,
     $._interpolation_text,
+    $._raw_template_start_tag_name,
   ]),
 
   rules: {
@@ -23,10 +24,18 @@ export default grammar(HTML, {
       $.interpolation,
     ),
 
-    template_element: $ => seq(
-      alias($.template_start_tag, $.start_tag),
-      repeat($._node),
-      $.end_tag,
+    template_element: $ => choice(
+      seq(
+        alias($.template_start_tag, $.start_tag),
+        repeat($._node),
+        $.end_tag,
+      ),
+      // `<template lang="pug">` and other non-HTML languages are left as raw text
+      seq(
+        alias($.raw_template_start_tag, $.start_tag),
+        optional($.raw_text),
+        $.end_tag,
+      ),
     ),
 
     start_tag: $ => seq(
@@ -57,9 +66,16 @@ export default grammar(HTML, {
       '>',
     ),
 
+    raw_template_start_tag: $ => seq(
+      '<',
+      alias($._raw_template_start_tag_name, $.tag_name),
+      repeat($._attribute),
+      '>',
+    ),
+
     self_closing_tag: $ => seq(
       '<',
-      alias(choice($._start_tag_name, $._template_start_tag_name), $.tag_name),
+      alias(choice($._start_tag_name, $._template_start_tag_name, $._raw_template_start_tag_name), $.tag_name),
       repeat($._attribute),
       '/>',
     ),
